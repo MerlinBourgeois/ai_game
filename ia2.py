@@ -63,7 +63,7 @@ def prendre_decision(x, y, obstacle_x, obstacle_y):
 # Boucle principale du jeu
 running = True
 clock = pygame.time.Clock()
-iterations = 5  # Nombre d'itérations d'apprentissage supplémentaires
+iterations = 1  # Nombre d'itérations d'apprentissage supplémentaires
 
 while running:
     for event in pygame.event.get():
@@ -110,6 +110,9 @@ while running:
 
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+        # Libérer la mémoire
+        del gradients, tape
 
     # Effacement de l'écran
     fenetre.fill(BLANC)
