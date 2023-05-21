@@ -47,11 +47,13 @@ checkpoint = tf.train.Checkpoint(model=model)
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_path))
 
 # Fonction de récompense
-def get_reward():
-    if obstacle_y < personnage_y or obstacle_y + obstacle_hauteur > personnage_y + personnage_hauteur:
-        return -1  # Pénalité si l'obstacle est trop haut ou trop bas par rapport au personnage
-    else:
-        return -10  # Pénalité supplémentaire pour la collision avec un obstacle
+def get_reward(distance, survived_time):
+    collision_penalty = -100  # Pénalité pour la collision avec un obstacle
+    distance_reward = 10 * (1 - distance)  # Récompense basée sur la distance par rapport à l'obstacle
+    time_reward = survived_time  # Récompense basée sur la durée de survie
+
+    reward = collision_penalty + distance_reward + time_reward
+    return reward
 
 # Prédire l'action en fonction de l'état actuel
 def prendre_decision(x, y, obstacle_x, obstacle_y):
@@ -64,6 +66,8 @@ def prendre_decision(x, y, obstacle_x, obstacle_y):
 running = True
 clock = pygame.time.Clock()
 iterations = 1  # Nombre d'itérations d'apprentissage supplémentaires
+
+survived_time = 0  # Temps de survie du personnage
 
 while running:
     for event in pygame.event.get():
@@ -101,7 +105,8 @@ while running:
             obstacle_y = random.randint(0, hauteur - obstacle_hauteur)
 
         # Mise à jour du modèle
-        reward = get_reward()
+        distance = abs(obstacle_x - personnage_x) / largeur  # Calcul de la distance entre le personnage et l'obstacle
+        reward = get_reward(distance, survived_time)
         with tf.GradientTape() as tape:
             etat = np.array([personnage_x / largeur, personnage_y / hauteur, obstacle_x / largeur, obstacle_y / hauteur,
                              personnage_x / largeur, personnage_y / hauteur])
@@ -127,6 +132,8 @@ while running:
     pygame.display.flip()
 
     clock.tick(60)
+
+    survived_time += 1  # Incrémente le temps de survie du personnage
 
 # Quitter Pygame
 pygame.quit()
